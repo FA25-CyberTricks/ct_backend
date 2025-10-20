@@ -1,4 +1,4 @@
-﻿namespace ct.backend.Features.Auth.Ports.Mail
+﻿namespace ct.backend.Common.Ports.Mail
 {
     public class MailContent
     {

@@ -1,5 +1,5 @@
-﻿using ct.backend.Domain.Entities;
-using ct.backend.Features.Auth.Ports.GoogleAuth;
+﻿using ct.backend.Common.Ports.GoogleAuth;
+using ct.backend.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 

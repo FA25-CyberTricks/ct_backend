@@ -21,5 +21,7 @@ namespace ct.backend.Features.Stores
         public decimal? Latitude { get; set; }   // DECIMAL(9,6) 
 
         public string? Avatar { get; set; }
+
+        public int? Visited { get; set; }
     }
 }

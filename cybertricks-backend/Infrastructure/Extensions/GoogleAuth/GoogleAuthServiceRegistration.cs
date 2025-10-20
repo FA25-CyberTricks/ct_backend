@@ -1,4 +1,4 @@
-﻿using ct.backend.Features.Auth.Ports.GoogleAuth;
+﻿using ct.backend.Common.Ports.GoogleAuth;
 using ct.backend.Infrastructure.ExternalServices.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;

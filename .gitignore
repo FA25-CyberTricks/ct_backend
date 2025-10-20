@@ -376,3 +376,9 @@ FodyWeavers.xsd
 # Ignore appsettings.json and environment-specific settings at any level
 **/appsettings.json
 **/appsettings.*.json
+
+# Google Cloud service account key files
+gcp-key.json
+*.gcp-key.json
+*.service-account.json
+secrets/

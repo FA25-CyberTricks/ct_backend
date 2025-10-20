@@ -1,6 +1,4 @@
-﻿using ct.backend.Domain.Entities;
-using ct.backend.Features.Brands;
-using ct.backend.Features.Stores;
+﻿using ct.backend.Features.Stores;
 using Microsoft.AspNetCore.OData;
 using Microsoft.OData.ModelBuilder;
 

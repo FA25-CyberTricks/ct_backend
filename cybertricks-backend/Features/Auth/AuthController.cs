@@ -1,6 +1,7 @@
-﻿using ct.backend.Domain.Entities;
-using ct.backend.Features.Auth.Ports.GoogleAuth;
-using ct.backend.Features.Auth.Ports.Mail;
+﻿using ct.backend.Common.Constants;
+using ct.backend.Common.Ports.GoogleAuth;
+using ct.backend.Common.Ports.Mail;
+using ct.backend.Domain.Entities;
 using ct.backend.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -215,7 +216,7 @@ namespace ct.backend.Features.Auth
 
         [HttpGet("google-login")]
         [AllowAnonymous]
-        public IActionResult rGoogleLogin(string? returnUrl = "/")
+        public IActionResult GoogleLogin(string? returnUrl = "/")
         {
             // FE gọi endpoint này → BE redirect qua Google
             var redirectUrl = Url.Action(nameof(GoogleCallback), "Auth", new { returnUrl });
@@ -376,7 +377,7 @@ namespace ct.backend.Features.Auth
             {
                 UserName = request.Email.Split('@')[0]
                     + $"{random.Next(0, 10)}{random.Next(0, 10)}{random.Next(0, 10)}{random.Next(0, 10)}",
-                AvatarUrl = _config["AppSettings:DefaultAvatarUrl"],
+                AvatarUrl = GoogleStoragePaths.DefaultAvatars,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 FullName = $"{request.FirstName} {request.LastName}",

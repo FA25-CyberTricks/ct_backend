@@ -1,4 +1,4 @@
-﻿using ct.backend.Common.Message;
+﻿using ct.backend.Common.Constants;
 using ct.backend.Features;
 
 namespace ct.backend.Common.Validate
