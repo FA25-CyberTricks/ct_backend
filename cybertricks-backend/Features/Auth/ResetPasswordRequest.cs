@@ -1,4 +1,6 @@
-﻿public class ResetPasswordRequest
+﻿namespace ct.backend.Features.Auth;
+
+public class ResetPasswordRequest
 {
     public string UserId { get; set; }
     public string Token { get; set; }

@@ -1,5 +1,4 @@
-﻿using ct.backend.Domain.Enum;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ct.backend.Features.Bookinngs
 {
@@ -7,16 +6,11 @@ namespace ct.backend.Features.Bookinngs
     {
         public int StoreId { get; set; }
 
-        public string ClientId { get; set; } = default!;
-
-        [MaxLength(30)]
-        public string BookingCode { get; set; } = default!;
-
         public DateTime StartAt { get; set; }
         public DateTime EndAt { get; set; }
 
-        public BookingStatus Status { get; set; } = BookingStatus.reserved;
-        public decimal? EstimatedAmt { get; set; }
+        [MinLength(1)]
+        public List<int> MachineIds { get; init; } = new();
 
         [MaxLength(500)]
         public string? Note { get; set; }

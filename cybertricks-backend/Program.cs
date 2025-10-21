@@ -26,7 +26,7 @@ namespace ct.backend
                     .AllowAnyMethod());
 
                 opt.AddPolicy("frontend", p => p
-                   .WithOrigins("http://localhost:3000", "https://localhost:3000", "https://your-frontend.app")
+                   .WithOrigins("http://localhost:3000", "https://localhost:3000", "https://cybertricks.vercel.app")
                    .AllowAnyHeader()
                    .AllowAnyMethod());
             });

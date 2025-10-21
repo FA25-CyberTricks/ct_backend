@@ -11,8 +11,8 @@ using ct.backend.Infrastructure.Data;
 namespace ct.backend.Migrations
 {
     [DbContext(typeof(BookingDbContext))]
-    [Migration("20251001165435_updateDb")]
-    partial class updateDb
+    [Migration("20251021093523_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -338,6 +338,38 @@ namespace ct.backend.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("BrandOwners", (string)null);
+                });
+
+            modelBuilder.Entity("ct.backend.Domain.Entities.Favorite", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
+
+                    b.HasIndex("UserId", "StoreId")
+                        .IsUnique();
+
+                    b.ToTable("Favorites", (string)null);
                 });
 
             modelBuilder.Entity("ct.backend.Domain.Entities.Floor", b =>
@@ -950,6 +982,58 @@ namespace ct.backend.Migrations
                     b.ToTable("Payments", (string)null);
                 });
 
+            modelBuilder.Entity("ct.backend.Domain.Entities.PricingRule", b =>
+                {
+                    b.Property<int>("PricingRuleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("BasePricePerHour")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("DayOfWeek")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<byte>("EndHour")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<decimal?>("HourlyMultiplier")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("RoomType")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<byte>("StartHour")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.HasKey("PricingRuleId");
+
+                    b.HasIndex("StoreId", "RoomType", "DayOfWeek", "StartHour", "EndHour", "Status");
+
+                    b.ToTable("Pricing_rules", (string)null);
+                });
+
             modelBuilder.Entity("ct.backend.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1114,6 +1198,9 @@ namespace ct.backend.Migrations
                     b.Property<int>("FloorId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1200,6 +1287,9 @@ namespace ct.backend.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int?>("Visited")
+                        .HasColumnType("int");
 
                     b.HasKey("StoreId");
 
@@ -1439,6 +1529,107 @@ namespace ct.backend.Migrations
                     b.ToTable("User", (string)null);
                 });
 
+            modelBuilder.Entity("ct.backend.Domain.Entities.Voucher", b =>
+                {
+                    b.Property<int>("VoucherId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal?>("DiscountPercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime");
+
+                    b.Property<decimal?>("MaxDiscountAmount")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal?>("MinOrderAmount")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int?>("StoreId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int?>("UsageLimit")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UsedCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("VoucherId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("StoreId", "Status", "StartDate", "EndDate");
+
+                    b.ToTable("Vouchers", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_voucher_dates", "(EndDate >= StartDate)");
+
+                            t.HasCheckConstraint("ck_voucher_discount_one", "(\r\n                      (DiscountAmount IS NOT NULL AND DiscountAmount > 0 AND (DiscountPercent IS NULL OR DiscountPercent = 0))\r\n                      OR (DiscountPercent IS NOT NULL AND DiscountPercent > 0 AND DiscountAmount IS NULL)\r\n                    )");
+
+                            t.HasCheckConstraint("ck_voucher_percent_range", "(DiscountPercent IS NULL OR (DiscountPercent >= 0 AND DiscountPercent <= 100))");
+
+                            t.HasCheckConstraint("ck_voucher_usage_limit", "(UsageLimit IS NULL OR UsageLimit >= UsedCount)");
+                        });
+                });
+
+            modelBuilder.Entity("ct.backend.Domain.Entities.VoucherUsage", b =>
+                {
+                    b.Property<int>("VoucherUsageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UsedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("VoucherId")
+                        .HasColumnType("int");
+
+                    b.HasKey("VoucherUsageId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("VoucherId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("VoucherUsages", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -1543,6 +1734,25 @@ namespace ct.backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Brand");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ct.backend.Domain.Entities.Favorite", b =>
+                {
+                    b.HasOne("ct.backend.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ct.backend.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Store");
 
                     b.Navigation("User");
                 });
@@ -1758,6 +1968,17 @@ namespace ct.backend.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ct.backend.Domain.Entities.PricingRule", b =>
+                {
+                    b.HasOne("ct.backend.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Store");
+                });
+
             modelBuilder.Entity("ct.backend.Domain.Entities.Refund", b =>
                 {
                     b.HasOne("ct.backend.Domain.Entities.Payment", "Payment")
@@ -1857,6 +2078,35 @@ namespace ct.backend.Migrations
                     b.Navigation("Store");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ct.backend.Domain.Entities.Voucher", b =>
+                {
+                    b.HasOne("ct.backend.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Store");
+                });
+
+            modelBuilder.Entity("ct.backend.Domain.Entities.VoucherUsage", b =>
+                {
+                    b.HasOne("ct.backend.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ct.backend.Domain.Entities.Voucher", "Voucher")
+                        .WithMany()
+                        .HasForeignKey("VoucherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+
+                    b.Navigation("Voucher");
                 });
 
             modelBuilder.Entity("ct.backend.Domain.Entities.Booking", b =>

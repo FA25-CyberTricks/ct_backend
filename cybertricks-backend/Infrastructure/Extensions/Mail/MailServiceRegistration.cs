@@ -1,4 +1,4 @@
-﻿using ct.backend.Features.Auth.Ports.Mail;
+﻿using ct.backend.Common.Ports.Mail;
 using ct.backend.Infrastructure.ExternalServices.Mail;
 
 namespace ct.backend.Infrastructure.Extension.Mail;

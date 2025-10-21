@@ -7,7 +7,7 @@ using MySql.EntityFrameworkCore.Metadata;
 namespace ct.backend.Migrations
 {
     /// <inheritdoc />
-    public partial class initDb : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -86,6 +86,11 @@ namespace ct.backend.Migrations
                     SubscriptionType = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: true),
                     SubscriptionStartDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     SubscriptionEndDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    Gender = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false),
+                    DateOfBirth = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "varchar(15)", maxLength: 15, nullable: true),
+                    Address = table.Column<string>(type: "longtext", nullable: true),
+                    Balance = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime", nullable: true),
@@ -98,7 +103,6 @@ namespace ct.backend.Migrations
                     PasswordHash = table.Column<string>(type: "longtext", nullable: true),
                     SecurityStamp = table.Column<string>(type: "longtext", nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "longtext", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "varchar(255)", nullable: true),
                     PhoneNumberConfirmed = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     TwoFactorEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     LockoutEnd = table.Column<DateTimeOffset>(type: "datetime", nullable: true),
@@ -144,6 +148,12 @@ namespace ct.backend.Migrations
                     BrandId = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
                     Address = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true),
+                    Latitude = table.Column<decimal>(type: "decimal(9,6)", nullable: true),
+                    Longitude = table.Column<decimal>(type: "decimal(9,6)", nullable: true),
+                    Description = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true),
+                    Avatar = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true),
+                    CoverImage = table.Column<string>(type: "longtext", nullable: true),
+                    Visited = table.Column<int>(type: "int", nullable: true),
                     ContactPhone = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true),
                     Status = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false, defaultValue: "active"),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
@@ -407,7 +417,7 @@ namespace ct.backend.Migrations
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     BrandId = table.Column<int>(type: "int", nullable: false),
                     CategoryId = table.Column<int>(type: "int", nullable: true),
-                    Url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false),
+                    Url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true),
                     Name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
                     Price = table.Column<decimal>(type: "decimal(12,2)", nullable: false),
                     Active = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true),
@@ -464,6 +474,35 @@ namespace ct.backend.Migrations
                         principalTable: "User",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Favorites",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    UserId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    StoreId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Favorites", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Favorites_Stores_StoreId",
+                        column: x => x.StoreId,
+                        principalTable: "Stores",
+                        principalColumn: "StoreId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Favorites_User_UserId",
+                        column: x => x.UserId,
+                        principalTable: "User",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -536,6 +575,36 @@ namespace ct.backend.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "Pricing_rules",
+                columns: table => new
+                {
+                    PricingRuleId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    StoreId = table.Column<int>(type: "int", nullable: false),
+                    RoomType = table.Column<string>(type: "varchar(255)", nullable: true),
+                    BasePricePerHour = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
+                    StartHour = table.Column<byte>(type: "tinyint unsigned", nullable: false),
+                    EndHour = table.Column<byte>(type: "tinyint unsigned", nullable: false),
+                    HourlyMultiplier = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
+                    DayOfWeek = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true),
+                    Description = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true),
+                    Status = table.Column<string>(type: "varchar(255)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Pricing_rules", x => x.PricingRuleId);
+                    table.ForeignKey(
+                        name: "FK_Pricing_rules_Stores_StoreId",
+                        column: x => x.StoreId,
+                        principalTable: "Stores",
+                        principalColumn: "StoreId",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "StoreAccounts",
                 columns: table => new
                 {
@@ -556,32 +625,6 @@ namespace ct.backend.Migrations
                         column: x => x.StoreId,
                         principalTable: "Stores",
                         principalColumn: "StoreId");
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "StoreImages",
-                columns: table => new
-                {
-                    ImageId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    StoreId = table.Column<int>(type: "int", nullable: false),
-                    Url = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false),
-                    Caption = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true),
-                    SortOrder = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    IsCover = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_StoreImages", x => x.ImageId);
-                    table.ForeignKey(
-                        name: "FK_StoreImages_Stores_StoreId",
-                        column: x => x.StoreId,
-                        principalTable: "Stores",
-                        principalColumn: "StoreId",
-                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -646,6 +689,43 @@ namespace ct.backend.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "Vouchers",
+                columns: table => new
+                {
+                    VoucherId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Code = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false),
+                    StoreId = table.Column<int>(type: "int", nullable: true),
+                    StartDate = table.Column<DateTime>(type: "datetime", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime", nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
+                    DiscountPercent = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
+                    MinOrderAmount = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
+                    MaxDiscountAmount = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
+                    UsageLimit = table.Column<int>(type: "int", nullable: true),
+                    UsedCount = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "varchar(255)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Vouchers", x => x.VoucherId);
+                    table.CheckConstraint("ck_voucher_dates", "(EndDate >= StartDate)");
+                    table.CheckConstraint("ck_voucher_discount_one", "(\r\n                      (DiscountAmount IS NOT NULL AND DiscountAmount > 0 AND (DiscountPercent IS NULL OR DiscountPercent = 0))\r\n                      OR (DiscountPercent IS NOT NULL AND DiscountPercent > 0 AND DiscountAmount IS NULL)\r\n                    )");
+                    table.CheckConstraint("ck_voucher_percent_range", "(DiscountPercent IS NULL OR (DiscountPercent >= 0 AND DiscountPercent <= 100))");
+                    table.CheckConstraint("ck_voucher_usage_limit", "(UsageLimit IS NULL OR UsageLimit >= UsedCount)");
+                    table.ForeignKey(
+                        name: "FK_Vouchers_Stores_StoreId",
+                        column: x => x.StoreId,
+                        principalTable: "Stores",
+                        principalColumn: "StoreId",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "Invoices",
                 columns: table => new
                 {
@@ -695,6 +775,7 @@ namespace ct.backend.Migrations
                     RoomId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     FloorId = table.Column<int>(type: "int", nullable: false),
+                    HourlyRate = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
                     Type = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true),
                     Capacity = table.Column<int>(type: "int", nullable: true),
@@ -711,6 +792,34 @@ namespace ct.backend.Migrations
                         column: x => x.FloorId,
                         principalTable: "Floors",
                         principalColumn: "FloorId",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "VoucherUsages",
+                columns: table => new
+                {
+                    VoucherUsageId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    VoucherId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "datetime", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VoucherUsages", x => x.VoucherUsageId);
+                    table.ForeignKey(
+                        name: "FK_VoucherUsages_User_UserId",
+                        column: x => x.UserId,
+                        principalTable: "User",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_VoucherUsages_Vouchers_VoucherId",
+                        column: x => x.VoucherId,
+                        principalTable: "Vouchers",
+                        principalColumn: "VoucherId",
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
@@ -985,6 +1094,17 @@ namespace ct.backend.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Favorites_StoreId",
+                table: "Favorites",
+                column: "StoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Favorites_UserId_StoreId",
+                table: "Favorites",
+                columns: new[] { "UserId", "StoreId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Floors_StoreId_FloorNumber",
                 table: "Floors",
                 columns: new[] { "StoreId", "FloorNumber" },
@@ -1104,6 +1224,11 @@ namespace ct.backend.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Pricing_rules_StoreId_RoomType_DayOfWeek_StartHour_EndHour_S~",
+                table: "Pricing_rules",
+                columns: new[] { "StoreId", "RoomType", "DayOfWeek", "StartHour", "EndHour", "Status" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_TokenHash",
                 table: "RefreshTokens",
                 column: "TokenHash",
@@ -1144,11 +1269,6 @@ namespace ct.backend.Migrations
                 name: "IX_StoreAccounts_StoreId",
                 table: "StoreAccounts",
                 column: "StoreId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_StoreImages_StoreId_IsCover",
-                table: "StoreImages",
-                columns: new[] { "StoreId", "IsCover" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoreManagers_StoreId_UserId",
@@ -1212,6 +1332,28 @@ namespace ct.backend.Migrations
                 name: "IX_UserRoles_RoleId",
                 table: "UserRoles",
                 column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vouchers_Code",
+                table: "Vouchers",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vouchers_StoreId_Status_StartDate_EndDate",
+                table: "Vouchers",
+                columns: new[] { "StoreId", "Status", "StartDate", "EndDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VoucherUsages_UserId",
+                table: "VoucherUsages",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VoucherUsages_VoucherId_UserId",
+                table: "VoucherUsages",
+                columns: new[] { "VoucherId", "UserId" },
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -1222,6 +1364,9 @@ namespace ct.backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "BrandOwners");
+
+            migrationBuilder.DropTable(
+                name: "Favorites");
 
             migrationBuilder.DropTable(
                 name: "InvoiceLines");
@@ -1239,6 +1384,9 @@ namespace ct.backend.Migrations
                 name: "OrderItems");
 
             migrationBuilder.DropTable(
+                name: "Pricing_rules");
+
+            migrationBuilder.DropTable(
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
@@ -1252,9 +1400,6 @@ namespace ct.backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "StoreAccounts");
-
-            migrationBuilder.DropTable(
-                name: "StoreImages");
 
             migrationBuilder.DropTable(
                 name: "StoreManagers");
@@ -1275,6 +1420,9 @@ namespace ct.backend.Migrations
                 name: "UserTokens");
 
             migrationBuilder.DropTable(
+                name: "VoucherUsages");
+
+            migrationBuilder.DropTable(
                 name: "Machines");
 
             migrationBuilder.DropTable(
@@ -1288,6 +1436,9 @@ namespace ct.backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "Roles");
+
+            migrationBuilder.DropTable(
+                name: "Vouchers");
 
             migrationBuilder.DropTable(
                 name: "Rooms");

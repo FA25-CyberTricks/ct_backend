@@ -1,7 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using ct.backend.Features;
-using ct.backend.Common.Message;
 using ct.backend.Common.Validate;
+using ct.backend.Common.Constants;
 
 namespace ct.backend.Common.Error
 {

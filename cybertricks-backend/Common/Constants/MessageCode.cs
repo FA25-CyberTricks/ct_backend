@@ -1,4 +1,4 @@
-﻿namespace ct.backend.Common.Message
+﻿namespace ct.backend.Common.Constants
 {
     public static class MessageCodes
     {

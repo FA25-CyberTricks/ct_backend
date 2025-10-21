@@ -1,4 +1,4 @@
-﻿using ct.backend.Features.Auth.Ports.Mail;
+﻿using ct.backend.Common.Ports.Mail;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -41,7 +41,7 @@ public class MailService : IMailService
         catch (Exception ex)
         {
             // Send failed, email's content will be saved as mailssave
-            System.IO.Directory.CreateDirectory("mailssave");
+            Directory.CreateDirectory("mailssave");
             var emailsavefile = string.Format(@"mailssave/{0}.eml", Guid.NewGuid());
             await email.WriteToAsync(emailsavefile);
 

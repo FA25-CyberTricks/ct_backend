@@ -9,6 +9,7 @@ namespace ct.backend.Domain.Entities
 
         public int FloorId { get; set; }
         public virtual Floor Floor { get; set; } = default!;
+        public decimal HourlyRate { get; set; }
 
         [MaxLength(200)] 
         public string Name { get; set; } = default!;

@@ -2,7 +2,6 @@
 using ct.backend.Domain.Enum;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Data;
 using System.Text.Json;
 
 namespace ct.backend.Infrastructure.Data
@@ -26,21 +25,28 @@ namespace ct.backend.Infrastructure.Data
 
         public async Task<bool> SeedAllAsync()
         {
-            //await _context.Database.MigrateAsync();
+            // await _context.Database.MigrateAsync();
 
-            //await SeedBrandsAsync();
-            //await SeedStoresAsync();
-            //await SeedFloorsAsync();
-            //await SeedRoomsAsync();
-            //await SeedMachinesAsync();
-            //await SeedMenuCategoriesAsync();
-            //await SeedMenuItemsAsync();
-            //await SeedRolesAsync();
-            //await SeedUsersAsync();
-            //await SeedBrandOwnersAsync();
-            //await SeedStoreManagersAsync();
-            //await SeedStoreStaffsAsync();
-            await SeedVouchersAsync();
+            await SeedBrandsAsync();
+            await SeedStoresAsync();
+            await SeedFloorsAsync();
+            await SeedRoomsAsync();         // có set HourlyRate
+            await SeedMachinesAsync();
+            await SeedMenuCategoriesAsync();
+            await SeedMenuItemsAsync();
+
+            await SeedRolesAsync();         // fix NormalizedName
+            await SeedUsersAsync();         // thống nhất username lowercase
+            await SeedBrandOwnersAsync();
+            await SeedStoreManagersAsync(); // dùng entity StoreManager
+            await SeedStoreStaffsAsync();   // dùng entity StoreStaff
+            await SeedStoreAccountsAsync(); // tài khoản ngân hàng cửa hàng
+
+            await SeedPricingRulesAsync();  // GIỜ CAO ĐIỂM/THẤP ĐIỂM/WEEKEND
+            await SeedVouchersAsync();      // voucher hệ thống + theo store
+
+            await SeedSampleBookingsAsync();// (tuỳ chọn) 1-2 booking demo + BookingMachine
+
             return true;
         }
 
@@ -75,14 +81,12 @@ namespace ct.backend.Infrastructure.Data
             await _context.SaveChangesAsync();
         }
 
-
         // ===================== 2) STORES =====================
         private sealed record StoreSeed(string BrandCode, string Name, string Address, bool IsLarge);
         private static readonly StoreSeed[] StoreData =
         {
             new("CYBERWAVE", "CyberWave Q1 Flagship", "12 Nguyễn Huệ, Q1, TP.HCM", true),
             new("CYBERWAVE", "CyberWave Q7",          "99 Nguyễn Văn Linh, Q7, TP.HCM", false),
-
             new("PIXELFORGE","PixelForge Đà Nẵng",     "50 Bạch Đằng, Hải Châu, Đà Nẵng", false),
             new("PIXELFORGE","PixelForge Hà Nội",      "210 Xã Đàn, Đống Đa, Hà Nội", true),
         };
@@ -109,7 +113,6 @@ namespace ct.backend.Infrastructure.Data
             await _context.SaveChangesAsync();
         }
 
-
         // ===================== 3) FLOORS =====================
         private sealed record FloorSeed(string StoreName, int FloorNumber, string? Name);
         private static readonly FloorSeed[] FloorData =
@@ -117,13 +120,10 @@ namespace ct.backend.Infrastructure.Data
             new("CyberWave Q1 Flagship", 1, "Tầng 1 (Tiếp tân)"),
             new("CyberWave Q1 Flagship", 2, "Tầng 2 (Luyện tập)"),
             new("CyberWave Q1 Flagship", 3, "Tầng 3 (Thi đấu)"),
-
             new("CyberWave Q7", 1, "Tầng trệt"),
             new("CyberWave Q7", 2, "Lầu 1"),
-
             new("PixelForge Đà Nẵng", 1, "Tầng 1"),
             new("PixelForge Đà Nẵng", 2, "Tầng 2"),
-
             new("PixelForge Hà Nội", 1, "Tầng 1"),
             new("PixelForge Hà Nội", 2, "Tầng 2"),
             new("PixelForge Hà Nội", 3, "Tầng 3"),
@@ -150,7 +150,6 @@ namespace ct.backend.Infrastructure.Data
             await _context.SaveChangesAsync();
         }
 
-
         // ===================== 4) ROOMS =====================
         private sealed record RoomSeed(string StoreName, int FloorNumber, string RoomName, RoomType Type, int MachineCount, bool IsVip);
         private static readonly RoomSeed[] RoomData =
@@ -159,7 +158,7 @@ namespace ct.backend.Infrastructure.Data
             new("CyberWave Q1 Flagship", 1, "CW1-STD-02", RoomType.normal, 8, false),
             new("CyberWave Q1 Flagship", 2, "CW1-VIP-01", RoomType.vip,      6, true),
             new("CyberWave Q1 Flagship", 2, "CW1-STD-03", RoomType.normal, 10, false),
-            new("CyberWave Q1 Flagship", 3, "CW1-ARENA",  RoomType.vip,      10, true),
+            new("CyberWave Q1 Flagship", 3, "CW1-ARENA",  RoomType.vip,     10, true),
 
             new("CyberWave Q7", 1, "CW7-STD-01", RoomType.normal, 7, false),
             new("CyberWave Q7", 1, "CW7-VIP-01", RoomType.vip,      5, true),
@@ -192,6 +191,7 @@ namespace ct.backend.Infrastructure.Data
                     Name = r.RoomName,
                     Type = r.Type,
                     Capacity = r.IsVip ? 10 : 8,
+                    HourlyRate = r.IsVip ? 30000 : 20000, // <— set mặc định
                     Status = RoomStatus.active,
                     DisplayOrder = r.IsVip ? 1 : 2
                 });
@@ -199,8 +199,7 @@ namespace ct.backend.Infrastructure.Data
             await _context.SaveChangesAsync();
         }
 
-
-        // ===================== 5) MACHINES (specJson) =====================
+        // ===================== 5) MACHINES =====================
         private async Task SeedMachinesAsync()
         {
             var rooms = await _context.Rooms.ToListAsync();
@@ -208,7 +207,6 @@ namespace ct.backend.Infrastructure.Data
             foreach (var r in RoomData)
             {
                 var room = rooms.First(x => x.Name == r.RoomName);
-                // nếu đã đủ số lượng tối thiểu thì bỏ qua
                 var current = await _context.Machines.CountAsync(m => m.RoomId == room.RoomId);
                 if (current >= r.MachineCount) continue;
 
@@ -218,7 +216,6 @@ namespace ct.backend.Infrastructure.Data
                     var code = $"{r.RoomName}-PC-{i:D2}";
                     var spec = r.IsVip ? BuildSpecJsonHighEnd(i) : BuildSpecJsonStandard(i);
 
-                    // tránh trùng code nếu chạy nhiều lần
                     var exists = await _context.Machines.AnyAsync(m => m.Code == code);
                     if (exists) continue;
 
@@ -280,7 +277,6 @@ namespace ct.backend.Infrastructure.Data
             return JsonSerializer.Serialize(spec);
         }
 
-
         // ===================== 6) MENU CATEGORIES =====================
         private sealed record CatSeed(string BrandCode, string Name);
         private static readonly CatSeed[] CatData =
@@ -288,7 +284,6 @@ namespace ct.backend.Infrastructure.Data
             new("CYBERWAVE", "Combo"),
             new("CYBERWAVE", "Đồ uống"),
             new("CYBERWAVE", "Snack"),
-
             new("PIXELFORGE", "Combo"),
             new("PIXELFORGE", "Đồ uống"),
             new("PIXELFORGE", "Snack"),
@@ -313,7 +308,6 @@ namespace ct.backend.Infrastructure.Data
             }
             await _context.SaveChangesAsync();
         }
-
 
         // ===================== 7) MENU ITEMS =====================
         private sealed record ItemSeed(string BrandCode, string CategoryName, string ItemName, decimal Price);
@@ -361,26 +355,24 @@ namespace ct.backend.Infrastructure.Data
             await _context.SaveChangesAsync();
         }
 
-        // ===================== 8) USERS =====================
+        // ===================== 8) ROLES & USERS =====================
         private async Task SeedRolesAsync()
         {
             if (!await _roleManager.Roles.AnyAsync())
             {
                 var roles = new List<IdentityRole>
                 {
-                    new IdentityRole { Name = "Admin", NormalizedName = "ADMIN" },
-                    new IdentityRole { Name = "Owner", NormalizedName = "OWNER" },
-                    new IdentityRole { Name = "Manager", NormalizedName = "Manager" },
-                    new IdentityRole { Name = "Staff", NormalizedName = "STAFF" },
-                    new IdentityRole { Name = "User", NormalizedName = "USER" },
+                    new IdentityRole { Name = "Admin",   NormalizedName = "ADMIN" },
+                    new IdentityRole { Name = "Owner",   NormalizedName = "OWNER" },
+                    new IdentityRole { Name = "Manager", NormalizedName = "MANAGER" }, // FIX
+                    new IdentityRole { Name = "Staff",   NormalizedName = "STAFF" },
+                    new IdentityRole { Name = "User",    NormalizedName = "USER" },
                 };
 
                 foreach (var role in roles)
-                {
                     await _roleManager.CreateAsync(role);
-                }
             }
-            await _context.SaveChangesAsync(cancellationToken: CancellationToken.None);
+            await _context.SaveChangesAsync(CancellationToken.None);
         }
 
         private async Task SeedUsersAsync()
@@ -389,179 +381,142 @@ namespace ct.backend.Infrastructure.Data
             {
                 var users = new List<(User user, string password, string role)>
                 {
-                    // admin
-                    (
-                        new User
-                        {
-                            UserName = "admin",
-                            Email = "admin@gmail.com",
-                            FullName = "System Administrator",
-                            EmailConfirmed = true,
-                            SubscriptionType = "Premium",
-                            SubscriptionStartDate = DateTime.Now,
-                            SubscriptionEndDate = DateTime.Now.AddYears(1),
-                            IsActive = true
-                        },
-                        "Abcd1234!",
-                        "Admin"
-                    ),
+                    (new User
+                    {
+                        UserName = "admin",
+                        Email = "admin@gmail.com",
+                        FullName = "System Administrator",
+                        EmailConfirmed = true,
+                        SubscriptionType = "Premium",
+                        SubscriptionStartDate = DateTime.UtcNow,
+                        SubscriptionEndDate = DateTime.UtcNow.AddYears(1),
+                        IsActive = true
+                    }, "Abcd1234!", "Admin"),
 
-                    // brand owner
-                    (
-                        new User
-                        {
-                            UserName = "Owner1",
-                            Email = "owner1@gmail.com",
-                            FullName = "Owner 1",
-                            EmailConfirmed = true,
-                            SubscriptionType = "Basic",
-                            SubscriptionStartDate = DateTime.Now,
-                            SubscriptionEndDate = DateTime.Now.AddMonths(1),
-                            IsActive = true
-                        },
-                        "Abcd1234!",
-                        "Owner"
-                    ),
-                    (
-                        new User
-                        {
-                            UserName = "Owner2",
-                            Email = "owner2@gmail.com",
-                            FullName = "Owner 2",
-                            EmailConfirmed = true,
-                            SubscriptionType = "Basic",
-                            SubscriptionStartDate = DateTime.Now,
-                            SubscriptionEndDate = DateTime.Now.AddMonths(1),
-                            IsActive = true
-                        },
-                        "Abcd1234!",
-                        "Owner"
-                    ),
+                    (new User
+                    {
+                        UserName = "owner1",
+                        Email = "owner1@gmail.com",
+                        FullName = "Owner 1",
+                        EmailConfirmed = true,
+                        SubscriptionType = "Basic",
+                        SubscriptionStartDate = DateTime.UtcNow,
+                        SubscriptionEndDate = DateTime.UtcNow.AddMonths(1),
+                        IsActive = true
+                    }, "Abcd1234!", "Owner"),
 
-                    // store manager
-                    (
-                        new User
-                        {
-                            UserName = "manager1",
-                            Email = "manager1@gmail.com",
-                            FullName = "Manager 1",
-                            EmailConfirmed = true,
-                            SubscriptionType = "Basic",
-                            SubscriptionStartDate = DateTime.Now,
-                            SubscriptionEndDate = DateTime.Now.AddMonths(1),
-                            IsActive = true
-                        },
-                        "Abcd1234!",
-                        "Manager"
-                    ),
-                    (
-                        new User
-                        {
-                            UserName = "manager2",
-                            Email = "manager2@gmail.com",
-                            FullName = "Manager 2",
-                            EmailConfirmed = true,
-                            SubscriptionType = "Basic",
-                            SubscriptionStartDate = DateTime.Now,
-                            SubscriptionEndDate = DateTime.Now.AddMonths(1),
-                            IsActive = true
-                        },
-                        "Abcd1234!",
-                        "Manager"
-                    ),
+                    (new User
+                    {
+                        UserName = "owner2",
+                        Email = "owner2@gmail.com",
+                        FullName = "Owner 2",
+                        EmailConfirmed = true,
+                        SubscriptionType = "Basic",
+                        SubscriptionStartDate = DateTime.UtcNow,
+                        SubscriptionEndDate = DateTime.UtcNow.AddMonths(1),
+                        IsActive = true
+                    }, "Abcd1234!", "Owner"),
 
-                    // store staff
-                    (
-                        new User
-                        {
-                            UserName = "staff1",
-                            Email = "staff1@gmail.com",
-                            FullName = "Staff 1",
-                            EmailConfirmed = true,
-                            SubscriptionType = "Basic",
-                            SubscriptionStartDate = DateTime.Now,
-                            SubscriptionEndDate = DateTime.Now.AddMonths(1),
-                            IsActive = true
-                        },
-                        "Abcd1234!",
-                        "Staff"
-                    ),
-                    (
-                        new User
-                        {
-                            UserName = "staff2",
-                            Email = "staff2@gmail.com",
-                            FullName = "Staff 2",
-                            EmailConfirmed = true,
-                            SubscriptionType = "Basic",
-                            SubscriptionStartDate = DateTime.Now,
-                            SubscriptionEndDate = DateTime.Now.AddMonths(1),
-                            IsActive = true
-                        },
-                        "Abcd1234!",
-                        "Staff"
-                    ),
+                    (new User
+                    {
+                        UserName = "manager1",
+                        Email = "manager1@gmail.com",
+                        FullName = "Manager 1",
+                        EmailConfirmed = true,
+                        SubscriptionType = "Basic",
+                        SubscriptionStartDate = DateTime.UtcNow,
+                        SubscriptionEndDate = DateTime.UtcNow.AddMonths(1),
+                        IsActive = true
+                    }, "Abcd1234!", "Manager"),
 
-                    // user
-                    (
-                        new User
-                        {
-                            UserName = "User1",
-                            Email = "user1@gmail.com",
-                            FullName = "User 1",
-                            EmailConfirmed = true,
-                            SubscriptionType = "Basic",
-                            SubscriptionStartDate = DateTime.Now,
-                            SubscriptionEndDate = DateTime.Now.AddMonths(1),
-                            IsActive = true
-                        },
-                        "Abcd1234!",
-                        "User"
-                    ),
-                    (
-                        new User
-                        {
-                            UserName = "User2",
-                            Email = "user2@gmail.com",
-                            FullName = "User 2",
-                            EmailConfirmed = true,
-                            SubscriptionType = "Basic",
-                            SubscriptionStartDate = DateTime.Now,
-                            SubscriptionEndDate = DateTime.Now.AddMonths(1),
-                            IsActive = true
-                        },
-                        "Abcd1234!",
-                        "User"
-                    )
+                    (new User
+                    {
+                        UserName = "manager2",
+                        Email = "manager2@gmail.com",
+                        FullName = "Manager 2",
+                        EmailConfirmed = true,
+                        SubscriptionType = "Basic",
+                        SubscriptionStartDate = DateTime.UtcNow,
+                        SubscriptionEndDate = DateTime.UtcNow.AddMonths(1),
+                        IsActive = true
+                    }, "Abcd1234!", "Manager"),
+
+                    (new User
+                    {
+                        UserName = "staff1",
+                        Email = "staff1@gmail.com",
+                        FullName = "Staff 1",
+                        EmailConfirmed = true,
+                        SubscriptionType = "Basic",
+                        SubscriptionStartDate = DateTime.UtcNow,
+                        SubscriptionEndDate = DateTime.UtcNow.AddMonths(1),
+                        IsActive = true
+                    }, "Abcd1234!", "Staff"),
+
+                    (new User
+                    {
+                        UserName = "staff2",
+                        Email = "staff2@gmail.com",
+                        FullName = "Staff 2",
+                        EmailConfirmed = true,
+                        SubscriptionType = "Basic",
+                        SubscriptionStartDate = DateTime.UtcNow,
+                        SubscriptionEndDate = DateTime.UtcNow.AddMonths(1),
+                        IsActive = true
+                    }, "Abcd1234!", "Staff"),
+
+                    (new User
+                    {
+                        UserName = "user1",
+                        Email = "user1@gmail.com",
+                        FullName = "User 1",
+                        EmailConfirmed = true,
+                        SubscriptionType = "Basic",
+                        SubscriptionStartDate = DateTime.UtcNow,
+                        SubscriptionEndDate = DateTime.UtcNow.AddMonths(1),
+                        IsActive = true
+                    }, "Abcd1234!", "User"),
+
+                    (new User
+                    {
+                        UserName = "user2",
+                        Email = "user2@gmail.com",
+                        FullName = "User 2",
+                        EmailConfirmed = true,
+                        SubscriptionType = "Basic",
+                        SubscriptionStartDate = DateTime.UtcNow,
+                        SubscriptionEndDate = DateTime.UtcNow.AddMonths(1),
+                        IsActive = true
+                    }, "Abcd1234!", "User"),
                 };
 
                 foreach (var (user, password, role) in users)
                 {
                     var result = await _userManager.CreateAsync(user, password);
                     if (result.Succeeded)
-                    {
                         await _userManager.AddToRoleAsync(user, role);
-                    }
-
-                    await _context.SaveChangesAsync(cancellationToken: CancellationToken.None);
                 }
+                await _context.SaveChangesAsync(CancellationToken.None);
             }
         }
 
+        private async Task<User?> FindUserAsync(string usernameLower) =>
+            await _userManager.Users.FirstOrDefaultAsync(u => u.UserName == usernameLower);
+
         private async Task SeedBrandOwnersAsync()
         {
-            var cyberwave = await _context.Brands.FirstOrDefaultAsync(c => c.Code == "CYBERWAVE");
-            var pixelForce = await _context.Brands.FirstOrDefaultAsync(c => c.Code == "PIXELFORGE");
+            var cyberwave = await _context.Brands.FirstAsync(c => c.Code == "CYBERWAVE");
+            var pixelforge = await _context.Brands.FirstAsync(c => c.Code == "PIXELFORGE");
 
-            var owner1 = await _userManager.Users.FirstOrDefaultAsync(u => u.UserName == "Owner1");
-            var owner2 = await _userManager.Users.FirstOrDefaultAsync(u => u.UserName == "Owner2");
+            var owner1 = await FindUserAsync("owner1");
+            var owner2 = await FindUserAsync("owner2");
 
             if (!await _context.BrandOwners.AnyAsync())
             {
                 var brandOwners = new List<BrandOwner>
                 {
-                    new BrandOwner { BrandId = cyberwave.BrandId, UserId = owner1.Id },
-                    new BrandOwner { BrandId = pixelForce.BrandId, UserId = owner2.Id },
+                    new BrandOwner { BrandId = cyberwave.BrandId, UserId = owner1!.Id },
+                    new BrandOwner { BrandId = pixelforge.BrandId, UserId = owner2!.Id },
                 };
 
                 await _context.BrandOwners.AddRangeAsync(brandOwners);
@@ -571,65 +526,132 @@ namespace ct.backend.Infrastructure.Data
 
         private async Task SeedStoreManagersAsync()
         {
-            var cyberwaves = await _context.Stores.Where(c => c.Brand.Code == "CYBERWAVE").ToListAsync();
-            var pixelForces = await _context.Stores.Where(c => c.Brand.Code == "PIXELFORGE").ToListAsync();
+            if (await _context.Set<StoreManager>().AnyAsync()) return;
 
-            var manager1 = await _userManager.Users.FirstOrDefaultAsync(u => u.UserName == "Manager1");
-            var manager2 = await _userManager.Users.FirstOrDefaultAsync(u => u.UserName == "Manager2");
+            var manager1 = await FindUserAsync("manager1");
+            var manager2 = await FindUserAsync("manager2");
 
-            if (!await _context.StoreStaffs.AnyAsync())
-            {
-                var storeStaffs = new List<StoreStaff>();
+            var cyberwaveStores = await _context.Stores.Where(s => s.Brand.Code == "CYBERWAVE").ToListAsync();
+            var pixelforgeStores = await _context.Stores.Where(s => s.Brand.Code == "PIXELFORGE").ToListAsync();
 
-                foreach (var store in cyberwaves)
-                {
-                    storeStaffs.Add(new StoreStaff
-                    {
-                        StoreId = store.StoreId,
-                        UserId = manager1.Id
-                    });
-                }
+            var managers = new List<StoreManager>();
+            foreach (var s in cyberwaveStores)
+                managers.Add(new StoreManager { StoreId = s.StoreId, UserId = manager1!.Id, IsPrimary = true });
 
-                foreach (var store in pixelForces)
-                {
-                    storeStaffs.Add(new StoreStaff
-                    {
-                        StoreId = store.StoreId,
-                        UserId = manager2.Id
-                    });
-                }
+            foreach (var s in pixelforgeStores)
+                managers.Add(new StoreManager { StoreId = s.StoreId, UserId = manager2!.Id, IsPrimary = true });
 
-                await _context.StoreStaffs.AddRangeAsync(storeStaffs);
-                await _context.SaveChangesAsync();
-            }
+            await _context.AddRangeAsync(managers);
+            await _context.SaveChangesAsync();
         }
 
         private async Task SeedStoreStaffsAsync()
         {
-            var cyberwave = await _context.Stores
-               .Where(c => c.Brand.Code == "CYBERWAVE")
-               .FirstOrDefaultAsync();
+            if (await _context.StoreStaffs.AnyAsync()) return;
 
-            var pixelForce = await _context.Stores
-                .Where(c => c.Brand.Code == "PIXELFORGE")
-                .FirstOrDefaultAsync();
+            var staff1 = await FindUserAsync("staff1");
+            var staff2 = await FindUserAsync("staff2");
 
-            var staff1 = await _userManager.Users.FirstOrDefaultAsync(u => u.UserName == "Staff1");
-            var staff2 = await _userManager.Users.FirstOrDefaultAsync(u => u.UserName == "Staff2");
+            var anyCyberwaveStore = await _context.Stores.Where(s => s.Brand.Code == "CYBERWAVE").FirstAsync();
+            var anyPixelforgeStore = await _context.Stores.Where(s => s.Brand.Code == "PIXELFORGE").FirstAsync();
 
-            if (!await _context.StoreStaffs.AnyAsync())
+            var storeStaffs = new List<StoreStaff>
             {
-                var storeStaffs = new List<StoreStaff>
-                {
-                    new StoreStaff { StoreId = cyberwave.BrandId, UserId = staff1.Id },
-                    new StoreStaff { StoreId = pixelForce.BrandId, UserId = staff2.Id },
-                };
+                new StoreStaff { StoreId = anyCyberwaveStore.StoreId, UserId = staff1!.Id, IsPrimary = true },
+                new StoreStaff { StoreId = anyPixelforgeStore.StoreId, UserId = staff2!.Id, IsPrimary = true },
+            };
 
-                await _context.StoreStaffs.AddRangeAsync(storeStaffs);
-                await _context.SaveChangesAsync();
-            }
+            await _context.StoreStaffs.AddRangeAsync(storeStaffs);
+            await _context.SaveChangesAsync();
         }
 
+        private async Task SeedStoreAccountsAsync()
+        {
+            if (await _context.Set<StoreAccount>().AnyAsync()) return;
+            var stores = await _context.Stores.ToListAsync();
+
+            var accounts = stores.Select((s, idx) => new StoreAccount
+            {
+                StoreId = s.StoreId,
+                BankName = "VCB",
+                AccountNumber = $"001100{1000 + idx}",
+                AccountHolder = s.Name
+            }).ToList();
+
+            await _context.AddRangeAsync(accounts);
+            await _context.SaveChangesAsync();
+        }
+
+        // ===================== 9) PRICING RULES =====================
+        // Rule mẫu:
+        // - 00:00–08:00: multiplier 0.8 (giờ thấp điểm)
+        // - 18:00–22:00: multiplier 1.2 (giờ cao điểm)
+        // - Weekend (Sat/Sun) 10:00–22:00: multiplier 1.15
+        private async Task SeedPricingRulesAsync()
+        {
+            if (await _context.Set<PricingRule>().AnyAsync()) return;
+
+            var stores = await _context.Stores.ToListAsync();
+            var rules = new List<PricingRule>();
+
+            foreach (var s in stores)
+            {
+                // thấp điểm cho toàn store
+                rules.Add(new PricingRule
+                {
+                    StoreId = s.StoreId,
+                    RoomType = null,              // áp dụng toàn store
+                    StartHour = 0,
+                    EndHour = 8,
+                    HourlyMultiplier = 0.8m,
+                    DayOfWeek = null,             // mọi ngày
+                    Description = "Off-peak 00:00–08:00",
+                    Status = PricingStatus.Active
+                });
+
+                // cao điểm tối cho toàn store
+                rules.Add(new PricingRule
+                {
+                    StoreId = s.StoreId,
+                    RoomType = null,
+                    StartHour = 18,
+                    EndHour = 22,
+                    HourlyMultiplier = 1.2m,
+                    DayOfWeek = null,
+                    Description = "Peak 18:00–22:00",
+                    Status = PricingStatus.Active
+                });
+
+                // weekend rule cho phòng VIP
+                rules.Add(new PricingRule
+                {
+                    StoreId = s.StoreId,
+                    RoomType = RoomType.vip,
+                    StartHour = 10,
+                    EndHour = 22,
+                    HourlyMultiplier = 1.15m,
+                    DayOfWeek = "Sat",
+                    Description = "VIP weekend Sat",
+                    Status = PricingStatus.Active
+                });
+                rules.Add(new PricingRule
+                {
+                    StoreId = s.StoreId,
+                    RoomType = RoomType.vip,
+                    StartHour = 10,
+                    EndHour = 22,
+                    HourlyMultiplier = 1.15m,
+                    DayOfWeek = "Sun",
+                    Description = "VIP weekend Sun",
+                    Status = PricingStatus.Active
+                });
+            }
+
+            await _context.AddRangeAsync(rules);
+            await _context.SaveChangesAsync();
+        }
+
+        // ===================== 10) VOUCHERS =====================
         private async Task SeedVouchersAsync()
         {
             if (await _context.Vouchers.AnyAsync()) return;
@@ -644,6 +666,7 @@ namespace ct.backend.Infrastructure.Data
                     Code = "WELCOME10",
                     Description = "Giảm 10% cho khách hàng mới",
                     DiscountPercent = 10,
+                    MaxDiscountAmount = 100000,     // trần giảm
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.AddMonths(3),
                     UsageLimit = 500,
@@ -677,7 +700,67 @@ namespace ct.backend.Infrastructure.Data
                 }
             };
 
-            _context.Vouchers.AddRange(vouchers);
+            // tránh trùng Code nếu chạy nhiều lần / data tồn tại
+            vouchers = vouchers
+                .Where(v => !_context.Vouchers.Any(x => x.Code == v.Code))
+                .ToList();
+
+            if (vouchers.Count > 0)
+            {
+                _context.Vouchers.AddRange(vouchers);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        // ===================== 11) Booking demo (tuỳ chọn) =====================
+        private async Task SeedSampleBookingsAsync()
+        {
+            if (await _context.Bookings.AnyAsync()) return;
+
+            var store = await _context.Stores.Include(s => s.Floors).FirstAsync();
+            var user = await FindUserAsync("user1");
+            if (user == null) return;
+
+            var anyRoom = await _context.Rooms
+                .Include(r => r.Floor).ThenInclude(f => f.Store)
+                .Where(r => r.Floor.StoreId == store.StoreId)
+                .FirstOrDefaultAsync();
+
+            if (anyRoom == null) return;
+
+            var machines = await _context.Machines
+                .Where(m => m.RoomId == anyRoom.RoomId)
+                .OrderBy(m => m.MachineId)
+                .Take(2)
+                .ToListAsync();
+
+            var start = DateTime.UtcNow.AddDays(1).Date.AddHours(14); // 14:00 ngày mai (UTC)
+            var end = start.AddHours(2);
+
+            var booking = new Booking
+            {
+                StoreId = store.StoreId,
+                ClientId = user.Id,
+                BookingCode = $"BK-{Guid.NewGuid().ToString()[..8].ToUpper()}",
+                StartAt = start,
+                EndAt = end,
+                Status = BookingStatus.reserved,
+                EstimatedAmt = (anyRoom.HourlyRate * 2) * machines.Count,
+                Note = "Demo booking 2 máy"
+            };
+
+            await _context.Bookings.AddAsync(booking);
+            await _context.SaveChangesAsync();
+
+            // gán 2 máy
+            var bookingMachines = machines.Select((m, i) => new BookingMachine
+            {
+                BookingId = booking.BookingId,
+                MachineId = m.MachineId,
+                RateSnapshot = anyRoom.HourlyRate
+            }).ToList();
+
+            await _context.AddRangeAsync(bookingMachines);
             await _context.SaveChangesAsync();
         }
     }
