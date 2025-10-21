@@ -1,4 +1,4 @@
-﻿namespace ct.backend.Infrastructure.ExternalServices.Auth;
+﻿namespace ct.backend.Infrastructure.ExternalServices.GoogleAuth;
 
 public class GoogleAuthSettings
 {

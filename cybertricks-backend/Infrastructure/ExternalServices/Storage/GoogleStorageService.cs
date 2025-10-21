@@ -5,7 +5,7 @@ using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-namespace ct.backend.ExternalServices.Storage
+namespace ct.backend.Infrastructure.ExternalServices.Storage
 {
     internal sealed class GoogleStorageService : IGoogleStorageService
     {

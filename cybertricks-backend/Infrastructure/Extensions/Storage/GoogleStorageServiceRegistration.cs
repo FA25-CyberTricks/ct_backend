@@ -1,5 +1,5 @@
 ﻿using ct.backend.Common.Ports.Storage;
-using ct.backend.ExternalServices.Storage;
+using ct.backend.Infrastructure.ExternalServices.Storage;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Options;

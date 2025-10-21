@@ -31,8 +31,4 @@
 		<PackageReference Include="Google.Apis.Auth" Version="1.72.0" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Infrastructure\Migrations\" />
-	</ItemGroup>
-
 </Project>

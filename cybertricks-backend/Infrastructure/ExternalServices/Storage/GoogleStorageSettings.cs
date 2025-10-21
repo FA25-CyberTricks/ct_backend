@@ -1,4 +1,4 @@
-﻿namespace ct.backend.ExternalServices.Storage
+﻿namespace ct.backend.Infrastructure.ExternalServices.Storage
 {
     public class GoogleStorageSettings
     {

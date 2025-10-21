@@ -41,7 +41,7 @@ public class MailService : IMailService
         catch (Exception ex)
         {
             // Send failed, email's content will be saved as mailssave
-            System.IO.Directory.CreateDirectory("mailssave");
+            Directory.CreateDirectory("mailssave");
             var emailsavefile = string.Format(@"mailssave/{0}.eml", Guid.NewGuid());
             await email.WriteToAsync(emailsavefile);
 

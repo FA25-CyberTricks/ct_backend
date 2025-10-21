@@ -1,6 +1,6 @@
 ﻿namespace ct.backend.Features.Floors
 {
-    internal class FloorResponse<T> : AbstractResponse<T>
+    public class FloorResponse<T> : AbstractResponse<T>
     {
     }
 }

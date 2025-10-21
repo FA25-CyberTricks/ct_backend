@@ -366,7 +366,7 @@ namespace ct.backend.Migrations
                     b.HasIndex("UserId", "StoreId")
                         .IsUnique();
 
-                    b.ToTable("favorites", (string)null);
+                    b.ToTable("Favorites", (string)null);
                 });
 
             modelBuilder.Entity("ct.backend.Domain.Entities.Floor", b =>
@@ -1028,7 +1028,7 @@ namespace ct.backend.Migrations
 
                     b.HasIndex("StoreId", "RoomType", "DayOfWeek", "StartHour", "EndHour", "Status");
 
-                    b.ToTable("pricing_rules", (string)null);
+                    b.ToTable("Pricing_rules", (string)null);
                 });
 
             modelBuilder.Entity("ct.backend.Domain.Entities.RefreshToken", b =>
@@ -1194,6 +1194,9 @@ namespace ct.backend.Migrations
 
                     b.Property<int>("FloorId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1586,7 +1589,7 @@ namespace ct.backend.Migrations
 
                     b.HasIndex("StoreId", "Status", "StartDate", "EndDate");
 
-                    b.ToTable("vouchers", null, t =>
+                    b.ToTable("Vouchers", null, t =>
                         {
                             t.HasCheckConstraint("ck_voucher_dates", "(EndDate >= StartDate)");
 
@@ -1621,7 +1624,7 @@ namespace ct.backend.Migrations
                     b.HasIndex("VoucherId", "UserId")
                         .IsUnique();
 
-                    b.ToTable("voucher_usages", (string)null);
+                    b.ToTable("VoucherUsages", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
