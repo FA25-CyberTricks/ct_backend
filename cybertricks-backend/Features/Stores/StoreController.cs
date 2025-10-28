@@ -218,7 +218,8 @@ namespace ct.backend.Features.Stores
         public override async Task<ActionResult<AbstractResponse<PaginatedList<StoreDto>>>> GetPaged(
         [FromQuery] QueryStoreRequest request, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            var response = new StoreResponse<PaginatedList<StoreDto>>();
+            return Ok(response);
         }
 
         /// <summary>

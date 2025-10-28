@@ -6,6 +6,7 @@ using ct.backend.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -122,6 +123,7 @@ namespace ct.backend.Features.Auth
         /// </summary>
         [HttpPost("refresh")]
         [AllowAnonymous]
+        [EnableRateLimiting("AuthRefreshLimiter")]
         public async Task<IActionResult> Refresh(string? returnUrl)
         {
             var refreshPlain = Request.Cookies["refreshToken"];
