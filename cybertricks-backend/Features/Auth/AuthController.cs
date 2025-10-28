@@ -6,6 +6,7 @@ using ct.backend.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -92,8 +93,8 @@ namespace ct.backend.Features.Auth
             Response.Cookies.Append("refreshToken", refreshPlain, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = !_env.IsDevelopment(),
-                SameSite = SameSiteMode.Strict,
+                  Secure = true,
+                SameSite = SameSiteMode.None,
                 Expires = rt.ExpiresAtUtc
             });
 
@@ -113,7 +114,7 @@ namespace ct.backend.Features.Auth
                     avatarUrl = user.AvatarUrl,
                     role = roles
                 },
-                returnUrk = request.returnUrl ?? "/"
+                returnUrl = request.returnUrl ?? "/"
             });
         }
 
@@ -122,6 +123,7 @@ namespace ct.backend.Features.Auth
         /// </summary>
         [HttpPost("refresh")]
         [AllowAnonymous]
+        [EnableRateLimiting("AuthRefreshLimiter")]
         public async Task<IActionResult> Refresh(string? returnUrl)
         {
             var refreshPlain = Request.Cookies["refreshToken"];
@@ -165,8 +167,8 @@ namespace ct.backend.Features.Auth
             Response.Cookies.Append("refreshToken", newPlain, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = !_env.IsDevelopment(),
-                SameSite = SameSiteMode.Strict,
+                Secure = true,
+                SameSite = SameSiteMode.None,
                 Expires = newRt.ExpiresAtUtc
             });
 
@@ -209,7 +211,12 @@ namespace ct.backend.Features.Auth
             }
 
             // xoá cookie client
-            Response.Cookies.Delete("refreshToken");
+            Response.Cookies.Delete("refreshToken", new CookieOptions
+            {
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/"
+            });
 
             return Ok(new { message = "Logged out" });
         }
@@ -303,8 +310,8 @@ namespace ct.backend.Features.Auth
             Response.Cookies.Append("refreshToken", refreshPlain, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = !_env.IsDevelopment(),
-                SameSite = SameSiteMode.Strict,
+                  Secure = true,
+                SameSite = SameSiteMode.None,
                 Expires = DateTime.UtcNow.AddDays(int.Parse(_config["Jwt:ExpireDays"] ?? "14"))
             });
 

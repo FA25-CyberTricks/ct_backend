@@ -1,4 +1,5 @@
-﻿using ct.backend.Domain.Entities;
+﻿using ct.backend.Common.Ports.Storage;
+using ct.backend.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +13,16 @@ namespace ct.backend.Features.UserProfiles
     {
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
+        private readonly IGoogleStorageService _googleStorageService;
 
-        public ProfileController(UserManager<User> userManager, SignInManager<User> signInManager)
+        public ProfileController(
+            UserManager<User> userManager,
+            SignInManager<User> signInManager,
+            IGoogleStorageService googleStorageService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _googleStorageService = googleStorageService;
         }
 
         private Task<User?> GetCurrentUserAsync() => _userManager.GetUserAsync(User);
@@ -28,50 +34,91 @@ namespace ct.backend.Features.UserProfiles
             var user = await GetCurrentUserAsync();
             if (user is null) return Unauthorized(new { message = "Not logged in" });
 
-            var roles = await _userManager.GetRolesAsync(user);
-
             return Ok(new
             {
                 id = user.Id,
                 email = user.Email,
-                fullName = user.FullName,
+                gender = (int?)user.Gender,                
+                genderName = user.Gender.ToString()?.ToLower(),
+                birth = user.DateOfBirth?.ToString("yyyy-MM-dd"),
+                phoneNumber = user.PhoneNumber,
                 firstName = user.FirstName,
                 lastName = user.LastName,
                 avatarUrl = user.AvatarUrl,
-                subscriptionType = user.SubscriptionType,
-                subscriptionStartDate = user.SubscriptionStartDate,
-                subscriptionEndDate = user.SubscriptionEndDate,
-                isActive = user.IsActive,
-                createdAt = user.CreatedAt,
-                updatedAt = user.UpdatedAt,
-                lastLogin = user.LastLogin,
-                roles
+                address = user.Address,
             });
         }
+
         [HttpPut("update")]
         [Authorize]
-        [RequestSizeLimit(10_000_000)] // giới hạn 10MB
+        [RequestSizeLimit(20_000_000)] // giới hạn 10MB
         public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileRequest request, IFormFile? avatarFile)
         {
             var user = await GetCurrentUserAsync();
             if (user is null) return Unauthorized(new { message = "Not logged in" });
 
-            user.FirstName = request.FirstName ?? user.FirstName;
-            user.LastName = request.LastName ?? user.LastName;
+            if (!string.IsNullOrWhiteSpace(request.FirstName))
+                user.FirstName = request.FirstName.Trim();
 
-            // nếu có file mới thì lưu lại
-            if (avatarFile != null && avatarFile.Length > 0)
+            if (!string.IsNullOrWhiteSpace(request.LastName))
+                user.LastName = request.LastName.Trim();
+
+            if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+                user.PhoneNumber = request.PhoneNumber.Trim();
+
+            if (!string.IsNullOrWhiteSpace(request.Address))
+                user.Address = request.Address.Trim();
+
+            if (request.DateOfBirth.HasValue)
+                user.DateOfBirth = request.DateOfBirth.Value;
+
+            if (request.Gender.HasValue)
+                user.Gender = request.Gender.Value;
+
+            if (avatarFile is { Length: > 0 })
             {
-                var fileName = Guid.NewGuid() + Path.GetExtension(avatarFile.FileName);
-                var savePath = Path.Combine("wwwroot", "assets", "images", "avt", fileName);
+                // Kiểm tra MIME cơ bản (chỉ nhận ảnh)
+                var allowed = new[] { "image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif" };
+                if (!allowed.Contains(avatarFile.ContentType))
+                    return BadRequest(new { message = "File ảnh không hợp lệ. Chỉ chấp nhận PNG/JPEG/WEBP/GIF." });
 
-                using (var stream = new FileStream(savePath, FileMode.Create))
+                // Lấy phần mở rộng từ tên file (fallback theo contentType nếu không có)
+                var ext = Path.GetExtension(avatarFile.FileName);
+                if (string.IsNullOrWhiteSpace(ext))
+                    ext = avatarFile.ContentType switch
+                    {
+                        "image/png" => ".png",
+                        "image/jpeg" => ".jpg",
+                        "image/jpg" => ".jpg",
+                        "image/webp" => ".webp",
+                        "image/gif" => ".gif",
+                        _ => ".bin"
+                    };
+
+                // Tạo object name theo cấu trúc bucket (ví dụ có prefix public/)
+                // Bạn có thể đổi "public/avatars" theo convention dự án
+                var objectName = $"public/avatars/{user.Id}/{Guid.NewGuid():N}{ext}";
+
+                // Dùng stream trực tiếp từ IFormFile
+                using Stream stream = avatarFile.OpenReadStream();
+
+                // Có thể dùng token để hủy khi client hủy request
+                var ct = HttpContext.RequestAborted;
+
+                // Upload và nhận về URL/path đã lưu (service trả về string)
+                string savedUrl = await _googleStorageService.UploadAsync(
+                    stream,
+                    objectName,
+                    avatarFile.ContentType ?? "application/octet-stream",
+                    ct
+                );
+
+                if(user.AvatarUrl != null)
                 {
-                    await avatarFile.CopyToAsync(stream);
+                    await _googleStorageService.DeleteAsync(user.AvatarUrl.Replace(_googleStorageService.GetPublicUrl(""), ""), ct);
                 }
-
-                // Lưu path relative để FE load
-                user.AvatarUrl = $"assets/images/avt/{fileName}";
+                // Lưu URL vào user (tuỳ bạn muốn lưu full URL hay objectName)
+                user.AvatarUrl = _googleStorageService.GetPublicUrl(objectName);
             }
 
             user.UpdatedAt = DateTime.UtcNow;

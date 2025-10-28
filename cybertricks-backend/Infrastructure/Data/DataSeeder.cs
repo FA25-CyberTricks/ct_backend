@@ -223,7 +223,7 @@ namespace ct.backend.Infrastructure.Data
                     {
                         RoomId = room.RoomId,
                         Code = code,
-                        Status = MachineStatus.available,
+                        //Status = MachineStatus.available,
                         SpecJson = spec
                     });
                 }

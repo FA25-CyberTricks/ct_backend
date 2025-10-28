@@ -1,7 +1,9 @@
-using ct.backend.Domain.Entities;
+﻿using ct.backend.Domain.Entities;
 using ct.backend.Infrastructure.Data;
 using ct.backend.Infrastructure.Extension;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
 
 namespace ct.backend
 {
@@ -20,15 +22,31 @@ namespace ct.backend
             builder.Services.AddCoreInfrastructure(builder.Configuration);
             builder.Services.AddCors(opt =>
             {
-                opt.AddDefaultPolicy(p => p
-                    .AllowAnyOrigin()
-                    .AllowAnyHeader()
-                    .AllowAnyMethod());
-
                 opt.AddPolicy("frontend", p => p
-                   .WithOrigins("http://localhost:3000", "https://localhost:3000", "https://cybertricks.vercel.app")
-                   .AllowAnyHeader()
-                   .AllowAnyMethod());
+                       .WithOrigins(
+                           "http://localhost:5173",
+                           "https://localhost:5173",
+                           "http://localhost:3000", 
+                           "https://localhost:3000",
+                           "https://cybertricks.vercel.app"
+                       )
+                       .AllowAnyHeader()
+                       .AllowAnyMethod()
+                       .AllowCredentials()            
+                   );
+            });
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.AddPolicy("AuthRefreshLimiter", context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 3,
+                            Window = TimeSpan.FromSeconds(3),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = 0
+                        }));
             });
 
             builder.Services.AddControllers();
@@ -39,15 +57,25 @@ namespace ct.backend
             var app = builder.Build();
 
             // Seed Database
+            //using (var scope = app.Services.CreateScope())
+            //{
+            //    var ctx = scope.ServiceProvider.GetRequiredService<BookingDbContext>();
+            //    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            //    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+            //    var seeder = new DatabaseSeeder(ctx, userManager, roleManager);
+            //    await seeder.SeedAllAsync();
+            //}
+
             using (var scope = app.Services.CreateScope())
             {
                 var ctx = scope.ServiceProvider.GetRequiredService<BookingDbContext>();
-                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-
-                var seeder = new DatabaseSeeder(ctx, userManager, roleManager);
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<BrandStoreDataSeeder>>();
+                var seeder = new BrandStoreDataSeeder(ctx, logger);
                 await seeder.SeedAllAsync();
             }
+
+            app.UseRateLimiter();
 
             app.UseForwardedHeaders();
 
@@ -60,14 +88,7 @@ namespace ct.backend
 
             app.UseHttpsRedirection();
 
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseCors(); 
-            }
-            else
-            {
-                app.UseCors("frontend");
-            }
+            app.UseCors("frontend");
 
             app.UseAuthentication();
             app.UseAuthorization();

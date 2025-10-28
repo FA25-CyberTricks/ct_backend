@@ -575,7 +575,7 @@ namespace ct.backend.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Pricing_rules",
+                name: "PricingRules",
                 columns: table => new
                 {
                     PricingRuleId = table.Column<int>(type: "int", nullable: false)
@@ -594,9 +594,9 @@ namespace ct.backend.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Pricing_rules", x => x.PricingRuleId);
+                    table.PrimaryKey("PK_PricingRules", x => x.PricingRuleId);
                     table.ForeignKey(
-                        name: "FK_Pricing_rules_Stores_StoreId",
+                        name: "FK_PricingRules_Stores_StoreId",
                         column: x => x.StoreId,
                         principalTable: "Stores",
                         principalColumn: "StoreId",
@@ -945,7 +945,6 @@ namespace ct.backend.Migrations
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     RoomId = table.Column<int>(type: "int", nullable: false),
                     Code = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
-                    Status = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false, defaultValue: "available"),
                     SpecJson = table.Column<string>(type: "json", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
@@ -1224,8 +1223,8 @@ namespace ct.backend.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Pricing_rules_StoreId_RoomType_DayOfWeek_StartHour_EndHour_S~",
-                table: "Pricing_rules",
+                name: "IX_PricingRules_StoreId_RoomType_DayOfWeek_StartHour_EndHour_St~",
+                table: "PricingRules",
                 columns: new[] { "StoreId", "RoomType", "DayOfWeek", "StartHour", "EndHour", "Status" });
 
             migrationBuilder.CreateIndex(
@@ -1384,7 +1383,7 @@ namespace ct.backend.Migrations
                 name: "OrderItems");
 
             migrationBuilder.DropTable(
-                name: "Pricing_rules");
+                name: "PricingRules");
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");

@@ -11,7 +11,7 @@ using ct.backend.Infrastructure.Data;
 namespace ct.backend.Migrations
 {
     [DbContext(typeof(BookingDbContext))]
-    [Migration("20251021093523_init")]
+    [Migration("20251022104811_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -604,13 +604,6 @@ namespace ct.backend.Migrations
                     b.Property<string>("SpecJson")
                         .HasColumnType("json");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("available");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
@@ -1031,7 +1024,7 @@ namespace ct.backend.Migrations
 
                     b.HasIndex("StoreId", "RoomType", "DayOfWeek", "StartHour", "EndHour", "Status");
 
-                    b.ToTable("Pricing_rules", (string)null);
+                    b.ToTable("PricingRules", (string)null);
                 });
 
             modelBuilder.Entity("ct.backend.Domain.Entities.RefreshToken", b =>

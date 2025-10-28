@@ -9,7 +9,6 @@ namespace ct.backend.Features.Machines
 
         [MaxLength(50)]
         public string Code { get; set; } = default!;
-        public MachineStatus Status { get; set; } = MachineStatus.available;
         public string? SpecJson { get; set; }     // JSON
     }
 }

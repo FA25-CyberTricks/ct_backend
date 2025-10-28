@@ -201,11 +201,29 @@ namespace ct.backend.Features.Rooms
 
 
         /// <summary>
-        /// Get rooms with paging, filtering, sorting 
+        /// NotImplementedException
         /// </summary>
         public override async Task<ActionResult<AbstractResponse<PaginatedList<RoomDto>>>> GetPaged([FromQuery] QueryRoomRequest request, CancellationToken ct)
         {
-            var response = new RoomResponse<PaginatedList<RoomDto>>();
+            throw new NotImplementedException();
+        }
+
+
+        /// <summary>
+        /// Get rooms by store (no paging) - use with caution
+        /// </summary>
+        [HttpGet("by-floor")]
+        public async Task<ActionResult<AbstractResponse<IEnumerable<RoomDto>>>> GetByFloor([FromQuery] int floorId, CancellationToken ct)
+        {
+            var response = new RoomResponse<IEnumerable<RoomDto>>();
+            var roomDtos = await _context.Rooms
+                .AsNoTracking()
+                .Where(r => r.FloorId == floorId)
+                .ProjectTo<RoomDto>(_mapper.ConfigurationProvider)
+                .ToListAsync(ct);
+
+            response.Data = roomDtos;
+            response.Message = MessageCodes.E000;
             return Ok(response);
         }
     }

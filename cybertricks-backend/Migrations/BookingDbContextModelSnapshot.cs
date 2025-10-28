@@ -590,23 +590,25 @@ namespace ct.backend.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
+                    b.Property<int?>("ColIndex")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<string>("Label")
+                        .HasColumnType("longtext");
+
                     b.Property<int>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RowIndex")
                         .HasColumnType("int");
 
                     b.Property<string>("SpecJson")
                         .HasColumnType("json");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("available");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime")
@@ -1028,7 +1030,7 @@ namespace ct.backend.Migrations
 
                     b.HasIndex("StoreId", "RoomType", "DayOfWeek", "StartHour", "EndHour", "Status");
 
-                    b.ToTable("Pricing_rules", (string)null);
+                    b.ToTable("PricingRules", (string)null);
                 });
 
             modelBuilder.Entity("ct.backend.Domain.Entities.RefreshToken", b =>
@@ -1182,6 +1184,10 @@ namespace ct.backend.Migrations
                     b.Property<int?>("Capacity")
                         .HasColumnType("int");
 
+                    b.Property<string>("ColorHex")
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
@@ -1193,6 +1199,24 @@ namespace ct.backend.Migrations
                         .HasDefaultValue(0);
 
                     b.Property<int>("FloorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GridCols")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GridH")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GridRows")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GridW")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GridX")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GridY")
                         .HasColumnType("int");
 
                     b.Property<decimal>("HourlyRate")
@@ -1264,10 +1288,10 @@ namespace ct.backend.Migrations
                         .HasDefaultValue(0);
 
                     b.Property<decimal?>("Latitude")
-                        .HasColumnType("decimal(9,6)");
+                        .HasColumnType("decimal(12,9)");
 
                     b.Property<decimal?>("Longitude")
-                        .HasColumnType("decimal(9,6)");
+                        .HasColumnType("decimal(12,9)");
 
                     b.Property<string>("Name")
                         .IsRequired()

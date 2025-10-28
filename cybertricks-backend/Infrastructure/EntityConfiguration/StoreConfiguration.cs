@@ -23,11 +23,11 @@ namespace ct.backend.Infrastructure.EntityConfiguration
             b.HasIndex(x => new { x.BrandId, x.Name }); // tìm kiếm nhanh theo brand + tên
                                                         // Cấu hình Latitude
             b.Property(s => s.Latitude)
-                .HasColumnType("decimal(9,6)")   // kiểu DECIMAL(9,6) trong MySQL
+                .HasColumnType("decimal(12,9)")   // kiểu DECIMAL(9,6) trong MySQL
                 .IsRequired(false);              // cho phép null
 
             b.Property(s => s.Longitude)
-                .HasColumnType("decimal(9,6)")   // kiểu DECIMAL(9,6)
+                .HasColumnType("decimal(12,9)")   // kiểu DECIMAL(9,6)
                 .IsRequired(false);              // cho phép null
 
             b.HasMany(x => x.Floors)

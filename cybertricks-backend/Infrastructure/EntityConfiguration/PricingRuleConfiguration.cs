@@ -8,7 +8,7 @@ public class PricingRuleConfiguration : IEntityTypeConfiguration<PricingRule>
 {
     public void Configure(EntityTypeBuilder<PricingRule> b)
     {
-        b.ToTable("Pricing_rules");
+        b.ToTable("PricingRules");
 
         b.HasKey(x => x.PricingRuleId);
 
