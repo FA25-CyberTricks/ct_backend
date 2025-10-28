@@ -37,6 +37,9 @@ namespace ct.backend.Features.Bookinngs
         {
             var response = new BookingResponse<BookingDto>();
 
+            //request.StartAt = DateTime.UtcNow;
+            //request.EndAt = request.StartAt.AddHours(2);
+
             // 1) Validate model
             if (!ModelState.IsValid)
             {
@@ -144,31 +147,32 @@ namespace ct.backend.Features.Bookinngs
 
                 // 9) (Tuỳ hệ thống) Tạo Invoice trước rồi mới Payment
                 //    Ở đây giả định có entity Invoice với các field cơ bản.
-                var invoice = new Invoice
-                {
-                    // ví dụ các field: (tùy schema thực tế của bạn)
-                    StoreId = booking.StoreId,
-                    BookingId = booking.BookingId,
-                    Subtotal = booking.EstimatedAmt ?? 0m,
-                    Total = booking.EstimatedAmt ?? 0m,
-                    Status = InvoiceStatus.open
-                };
-                await _context.Invoices.AddAsync(invoice, ct);
-                await _context.SaveChangesAsync(ct);
+                //var invoice = new Invoice
+                //{
+                //    // ví dụ các field: (tùy schema thực tế của bạn)
+                //    StoreId = booking.StoreId,
+                //    BookingId = booking.BookingId,
+                //    Subtotal = booking.EstimatedAmt ?? 0m,
+                //    Total = booking.EstimatedAmt ?? 0m,
+                //    Status = InvoiceStatus.open,
 
-                // 10) Tạo Payment (liên kết InvoiceId)
-                var payment = new Payment
-                {
-                    InvoiceId = invoice.InvoiceId,
-                    UserId = userId,
-                    Method = PaymentMethod.cash,           // hoặc online, v.v.
-                    Amount = invoice.Total,
-                    Status = PaymentStatus.captured,       // hoặc authorized/pending tuỳ flow
-                    ProviderRef = null,
-                    PaidAt = DateTime.UtcNow
-                };
-                await _context.Payments.AddAsync(payment, ct);
-                await _context.SaveChangesAsync(ct);
+                //};
+                //await _context.Invoices.AddAsync(invoice, ct);
+                //await _context.SaveChangesAsync(ct);
+
+                //// 10) Tạo Payment (liên kết InvoiceId)
+                //var payment = new Payment
+                //{
+                //    InvoiceId = invoice.InvoiceId,
+                //    UserId = userId,
+                //    Method = PaymentMethod.cash,           // hoặc online, v.v.
+                //    Amount = invoice.Total,
+                //    Status = PaymentStatus.captured,       // hoặc authorized/pending tuỳ flow
+                //    ProviderRef = null,
+                //    PaidAt = DateTime.UtcNow
+                //};
+                //await _context.Payments.AddAsync(payment, ct);
+                //await _context.SaveChangesAsync(ct);
 
                 await tx.CommitAsync(ct);
 
@@ -310,6 +314,40 @@ namespace ct.backend.Features.Bookinngs
         {
             throw new NotImplementedException();
         }
-    }
 
+        [HttpGet("by-store")]
+        public async Task<ActionResult<AbstractResponse<IEnumerable<BookingDto>>>> GetByStore(
+            [FromQuery] int? storeId,
+            [FromQuery] BookingStatus? status,
+            [FromQuery] string? search,
+            [FromQuery] DateTime? dateFrom,
+            [FromQuery] DateTime? dateTo,
+            CancellationToken ct)
+        {
+            var query = _context.Bookings.AsNoTracking().AsQueryable();
+
+            if (storeId.HasValue)
+                query = query.Where(b => b.StoreId == storeId);
+
+            if (status.HasValue)
+                query = query.Where(b => b.Status == status);
+
+            if (!string.IsNullOrEmpty(search))
+                query = query.Where(b =>
+                    b.BookingCode!.Contains(search) ||
+                    b.Client.FullName.Contains(search));
+
+            if (dateFrom.HasValue)
+                query = query.Where(b => b.StartAt >= dateFrom);
+
+            if (dateTo.HasValue)
+                query = query.Where(b => b.EndAt <= dateTo);
+
+            var data = await query
+                .ProjectTo<BookingDto>(_mapper.ConfigurationProvider)
+                .ToListAsync(ct);
+
+            return Ok(new BookingResponse<IEnumerable<BookingDto>> { Data = data, Message = MessageCodes.E000 });
+        }
+    }
 }

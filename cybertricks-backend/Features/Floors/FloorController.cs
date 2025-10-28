@@ -202,11 +202,28 @@ namespace ct.backend.Features.Floors
 
 
         /// <summary>
-        /// Get floors with paging, filtering, sorting 
+        /// Not implemented: Get paged floors with filtering/sorting
         /// </summary>
         public override async Task<ActionResult<AbstractResponse<PaginatedList<FloorDto>>>> GetPaged([FromQuery] QueryFloorRequest request, CancellationToken ct)
         {
-            var response = new FloorResponse<PaginatedList<FloorDto>>();
+           throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Get floors by store id
+        /// </summary>
+        [HttpGet("by-store")]
+        public async Task<ActionResult<AbstractResponse<IEnumerable<FloorDto>>>> GetbyStore([FromQuery] int storeId, CancellationToken ct)
+        {
+            var response = new FloorResponse<IEnumerable<FloorDto>>();
+            var floorDtos = await _context.Floors
+                .AsNoTracking()
+                .Where(f => f.StoreId == storeId)
+                .ProjectTo<FloorDto>(_mapper.ConfigurationProvider)
+                .ToListAsync(ct);
+
+            response.Data = floorDtos;
+            response.Message = MessageCodes.E000;
             return Ok(response);
         }
     }

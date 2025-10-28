@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ct.backend.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using ct.backend.Infrastructure.Data;
 namespace ct.backend.Migrations
 {
     [DbContext(typeof(BookingDbContext))]
-    partial class BookingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251022104811_init")]
+    partial class init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -601,13 +604,6 @@ namespace ct.backend.Migrations
                     b.Property<string>("SpecJson")
                         .HasColumnType("json");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("available");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
@@ -1028,7 +1024,7 @@ namespace ct.backend.Migrations
 
                     b.HasIndex("StoreId", "RoomType", "DayOfWeek", "StartHour", "EndHour", "Status");
 
-                    b.ToTable("Pricing_rules", (string)null);
+                    b.ToTable("PricingRules", (string)null);
                 });
 
             modelBuilder.Entity("ct.backend.Domain.Entities.RefreshToken", b =>

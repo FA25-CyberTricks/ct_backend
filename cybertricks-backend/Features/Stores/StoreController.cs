@@ -5,14 +5,14 @@ using ct.backend.Common.Error;
 using ct.backend.Common.Pagination;
 using ct.backend.Common.Validate;
 using ct.backend.Domain.Entities;
-using ct.backend.Domain.Enum;
+using ct.backend.Features.Rooms;
 using ct.backend.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ct.backend.Features.Stores
 {
-    [Route("api/[controller]/[action]")]
+    [Route("api/[controller]")]
     [ApiController]
     public class StoreController : AbstractController<int, CreateStoreRequest, UpdateStoreRequest, QueryStoreRequest, StoreDto>
     {
@@ -212,13 +212,30 @@ namespace ct.backend.Features.Stores
         }
 
         /// <summary>
-        /// Get stores with paging, filtering, sorting 
+        /// Not implemented: Get stores with paging, filtering, sorting
         /// </summary>
         [HttpGet]
         public override async Task<ActionResult<AbstractResponse<PaginatedList<StoreDto>>>> GetPaged(
         [FromQuery] QueryStoreRequest request, CancellationToken ct)
         {
-            var response = new StoreResponse<PaginatedList<StoreDto>>();
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Get stores by brand id
+        /// </summary>
+        [HttpGet("by-brand")]
+        public async Task<ActionResult<AbstractResponse<IEnumerable<StoreDto>>>> GetByBrand([FromQuery]int brandId, CancellationToken ct)
+        {
+            var response = new RoomResponse<IEnumerable<StoreDto>>();
+            var storeDtos = await _context.Stores
+                .AsNoTracking()
+                .Where(s => s.BrandId == brandId)
+                .ProjectTo<StoreDto>(_mapper.ConfigurationProvider)
+                .ToListAsync(ct);
+
+            response.Data = storeDtos;
+            response.Message = MessageCodes.E000;
             return Ok(response);
         }
     }

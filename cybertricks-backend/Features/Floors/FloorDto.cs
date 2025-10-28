@@ -6,7 +6,7 @@ namespace ct.backend.Features.Floors
     public class FloorDto
     {
         [Key]
-        public int? FloorId { get; set; }
+        public int FloorId { get; set; }
 
         public int? FloorNumber { get; set; }
 

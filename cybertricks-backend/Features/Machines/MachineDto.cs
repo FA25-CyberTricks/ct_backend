@@ -6,7 +6,7 @@ namespace ct.backend.Features.Machines
     public class MachineDto
     {
         [Key]
-        public int? MachineId { get; set; }
+        public int MachineId { get; set; }
 
         public int? RoomId { get; set; }
 

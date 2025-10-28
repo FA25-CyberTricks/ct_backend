@@ -12,7 +12,7 @@ namespace ct.backend.Domain.Entities
 
         [MaxLength(50)] 
         public string Code { get; set; } = default!;
-        public MachineStatus Status { get; set; } = MachineStatus.available;
+        //public MachineStatus Status { get; set; } = MachineStatus.available;
         public string? SpecJson { get; set; }     // JSON
 
         public virtual IEnumerable<BookingMachine> BookingMachines { get; set; }

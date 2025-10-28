@@ -13,8 +13,8 @@ namespace ct.backend.Infrastructure.EntityConfiguration
             b.HasKey(x => x.MachineId);
 
             b.Property(x => x.Code).HasMaxLength(50).IsRequired();
-            b.Property(x => x.Status).AsStringEnum().HasMaxLength(20)
-             .HasDefaultValue(MachineStatus.available);
+            //b.Property(x => x.Status).AsStringEnum().HasMaxLength(20)
+            // .HasDefaultValue(MachineStatus.available);
 
             // JSON spec (MySQL có thể set JSON nếu muốn)
             b.Property(x => x.SpecJson).HasColumnType("json"); // hoặc longtext

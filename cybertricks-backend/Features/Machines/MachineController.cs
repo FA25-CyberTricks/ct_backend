@@ -4,6 +4,8 @@ using ct.backend.Common.Constants;
 using ct.backend.Common.Pagination;
 using ct.backend.Common.Validate;
 using ct.backend.Domain.Entities;
+using ct.backend.Domain.Enum;
+using ct.backend.Features.Rooms;
 using ct.backend.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -198,11 +200,72 @@ namespace ct.backend.Features.Machines
 
 
         /// <summary>
-        /// Get machines with paging, filtering, sorting 
+        /// Not implemented: Get paged machines with filtering/sorting
         /// </summary>
         public override async Task<ActionResult<AbstractResponse<PaginatedList<MachineDto>>>> GetPaged([FromQuery] QueryMachineRequest request, CancellationToken ct)
         {
-            var response = new MachineResponse<PaginatedList<MachineDto>>();
+            throw new NotImplementedException();
+        }
+
+        [HttpGet("by-room")]
+        public async Task<ActionResult<AbstractResponse<IEnumerable<MachineDto>>>> GetByRoomWithStatus(
+            [FromQuery] int roomId,
+            [FromQuery] DateTime startUtc,
+            [FromQuery] DateTime endUtc,
+            CancellationToken ct)
+        {
+            //startUtc = DateTime.UtcNow.AddHours(2);
+            //endUtc = startUtc.AddHours(1);
+
+            if (roomId <= 0 || startUtc >= endUtc || (endUtc - startUtc).TotalMinutes < 30)
+                return BadRequest(new RoomResponse<IEnumerable<MachineDto>>
+                {
+                    Message = MessageCodes.E011 // hoặc mã bạn dùng cho bad request
+                });
+
+            // 1) Lấy các Machine trong phòng
+            var machineDtos = await _context.Machines
+                .AsNoTracking()
+                .Where(m => m.RoomId == roomId)
+                .ProjectTo<MachineDto>(_mapper.ConfigurationProvider)
+                .ToListAsync(ct);
+
+            var machineIdSet = machineDtos.Select(x => x.MachineId).ToHashSet();
+            // 2) Lấy các MachineId đang bị giữ trong khoảng [startUtc, endUtc)
+            //    (join Booking + BookingMachine, lọc overlap + status hợp lệ)
+            var bookedMachineIds = await (
+                 from b in _context.Bookings.AsNoTracking()
+                 join bm in _context.BookingMachines.AsNoTracking() on b.BookingId equals bm.BookingId
+                 where machineIdSet.Contains(bm.MachineId)
+                       && b.Status != BookingStatus.cancelled
+                       // Overlap chuẩn với [startUtc, endUtc)
+                       && startUtc < b.EndAt
+                       && endUtc > b.StartAt
+                 select bm.MachineId
+            ).Distinct().ToListAsync(ct);
+
+            var bookedSet = bookedMachineIds.ToHashSet();
+
+            // 3) Gắn trạng thái cho DTO
+            //    Tuỳ DTO của bạn có field nào:
+            //    - Nếu có IsAvailable: set true/false
+            //    - Nếu có Status (enum/string): map "Available"/"Booked"
+            foreach (var dto in machineDtos)
+            {
+                if (dto.Status is MachineStatus.down or MachineStatus.maintenance)
+                    continue;
+
+                dto.Status = bookedSet.Contains(dto.MachineId)
+                    ? MachineStatus.busy
+                    : MachineStatus.available;
+            }
+
+            var response = new MachineResponse<IEnumerable<MachineDto>>
+            {
+                Data = machineDtos, // ToListAsync() luôn trả về List, không null
+                Message = MessageCodes.E000
+            };
+
             return Ok(response);
         }
     }

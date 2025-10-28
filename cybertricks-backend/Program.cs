@@ -20,15 +20,18 @@ namespace ct.backend
             builder.Services.AddCoreInfrastructure(builder.Configuration);
             builder.Services.AddCors(opt =>
             {
-                opt.AddDefaultPolicy(p => p
-                    .AllowAnyOrigin()
-                    .AllowAnyHeader()
-                    .AllowAnyMethod());
-
                 opt.AddPolicy("frontend", p => p
-                   .WithOrigins("http://localhost:3000", "https://localhost:3000", "https://cybertricks.vercel.app")
-                   .AllowAnyHeader()
-                   .AllowAnyMethod());
+                       .WithOrigins(
+                           "http://localhost:5173",
+                           "https://localhost:5173",
+                           "http://localhost:3000", 
+                           "https://localhost:3000",
+                           "https://cybertricks.vercel.app"
+                       )
+                       .AllowAnyHeader()
+                       .AllowAnyMethod()
+                       .AllowCredentials()            
+                   );
             });
 
             builder.Services.AddControllers();
@@ -39,15 +42,15 @@ namespace ct.backend
             var app = builder.Build();
 
             // Seed Database
-            using (var scope = app.Services.CreateScope())
-            {
-                var ctx = scope.ServiceProvider.GetRequiredService<BookingDbContext>();
-                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            //using (var scope = app.Services.CreateScope())
+            //{
+            //    var ctx = scope.ServiceProvider.GetRequiredService<BookingDbContext>();
+            //    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            //    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-                var seeder = new DatabaseSeeder(ctx, userManager, roleManager);
-                await seeder.SeedAllAsync();
-            }
+            //    var seeder = new DatabaseSeeder(ctx, userManager, roleManager);
+            //    await seeder.SeedAllAsync();
+            //}
 
             app.UseForwardedHeaders();
 
@@ -60,14 +63,7 @@ namespace ct.backend
 
             app.UseHttpsRedirection();
 
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseCors(); 
-            }
-            else
-            {
-                app.UseCors("frontend");
-            }
+            app.UseCors("frontend");
 
             app.UseAuthentication();
             app.UseAuthorization();
